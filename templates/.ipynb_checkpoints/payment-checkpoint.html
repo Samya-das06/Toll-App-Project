@@ -1,0 +1,59 @@
+{% extends "base.html" %} {# Inherits the structure from base.html #}
+
+{% block content %} {# Content block defined in base.html #}
+<h1>Make Payment</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        Your Pending Toll Bills (Total Due: INR {{ "%.2f"|format(total_due) }})
+    </div>
+    <div class="card-body">
+        {% if unpaid_tolls %}
+            <p>Please review your unpaid tolls below. You can pay each bill individually.</p>
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Record ID</th>
+                        <th>Entry Location & Time</th>
+                        <th>Exit Location & Time</th>
+                        <th>Distance (km)</th>
+                        <th>Amount Due (INR)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for toll in unpaid_tolls %}
+                    <tr>
+                        <td>{{ toll.id }}</td>
+                        <td>{{ toll.entry_address }}<br><small>{{ toll.entry_timestamp.strftime('%Y-%m-%d %H:%M') if toll.entry_timestamp else 'N/A'}}</small></td>
+                        <td>{{ toll.exit_address }}<br><small>{{ toll.exit_timestamp.strftime('%Y-%m-%d %H:%M') if toll.exit_timestamp else 'N/A' }}</small></td>
+                        <td>{{ "%.2f"|format(toll.distance_km if toll.distance_km else 0) }}</td>
+                        <td class="fw-bold">{{ "%.2f"|format(toll.amount_due if toll.amount_due else 0) }}</td>
+                        <td>
+                            {# Form to pay a specific bill #}
+                            <form action="{{ url_for('pay_bill', toll_id=toll.id) }}" method="POST" style="display:inline;">
+                                {# In a real app, this button would trigger JS for Stripe/PayPal etc. #}
+                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Simulate payment for INR {{ "%.2f"|format(toll.amount_due) }} for Record ID {{ toll.id }}?')">
+                                    Pay Bill {{ toll.id }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {# Future enhancement: Add a "Pay Total Amount" button here if backend logic supports it #}
+
+        {% else %}
+            <div class="alert alert-success" role="alert">
+                You have no outstanding payments. Well done!
+            </div>
+        {% endif %}
+    </div>
+    <div class="card-footer text-muted">
+         <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+    </div>
+</div>
+
+{# Add information about real payment processing if integrated #}
+{% endblock %}

@@ -1,0 +1,95 @@
+{# templates/base.html #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Toll App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    {# --- NEW: Add Leaflet CSS --- #}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    {# --- End Leaflet CSS --- #}
+
+    {# Your custom CSS (existing) #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {# --- NEW: Add custom styles for small maps --- #}
+    <style>
+        .toll-map {
+            height: 200px; /* Adjust height for small maps */
+            width: 100%;   /* Make map responsive */
+            margin-bottom: 10px;
+        }
+    </style>
+    {# --- End custom styles --- #}
+
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Toll Road App</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">  {# <<< HERE is the ul tag #}
+                {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('payment') }}">Payment</a> {# Link to general payment page #}
+                    </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('query_page') }}">Submit Query</a>
+                    </li>
+                    <li class="nav-item">
+                        <span class="navbar-text me-2">Welcome, {{ current_user.username }}</span>
+                    </li>
+                    <li class="nav-item">
+                        {# This is the Logout link needed for Step 2 #}
+                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+    
+
+    <div class="container">
+        {# ... keep existing flash messages ... #}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="mt-5 text-center text-muted">
+        {# Use the injected variable from context processor #}
+        <p>&copy; {{ current_year }} Toll Road App</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {# --- NEW: Add Leaflet JS --- #}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    {# --- End Leaflet JS --- #}
+
+    {# <script src="{{ url_for('static', filename='js/main.js') }}"></script> #}
+
+    {# --- REMOVE live location script block --- #}
+    {# {% block scripts %}{% endblock %} #}
+    {# --- Instead, page-specific JS will be in the content block --- #}
+</body>
+</html>

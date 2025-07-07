@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Submit a Query</h2>
+<p>If you have questions about a bill or believe you were charged incorrectly, please let us know.</p>
+
+<form method="POST" action="{{ url_for('query_page') }}">
+    <div class="mb-3">
+        <label for="toll_record_id" class="form-label">Related Toll Record ID (Optional)</label>
+        <select class="form-select" id="toll_record_id" name="toll_record_id">
+            <option value="">-- Select if applicable --</option>
+            {% for toll in unpaid_tolls %}
+                <option value="{{ toll.id }}" {% if request.args.get('toll_id')|int == toll.id %}selected{% endif %}>
+                    ID: {{ toll.id }} - {{ toll.exit_address }} ({{ "%.2f"|format(toll.amount_due) }})
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="subject" class="form-label">Subject</label>
+        <input type="text" class="form-control" id="subject" name="subject" required>
+    </div>
+    <div class="mb-3">
+        <label for="message" class="form-label">Message</label>
+        <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Query</button>
+</form>
+{% endblock %}

@@ -1,0 +1,147 @@
+{# templates/map_test.html #}
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Map Location Simulation</h1>
+<p>Click on the map to select a location, then click "Send Location" to send the coordinates to the backend as if it were a live update from your device. Check your dashboard afterwards to see the results.</p>
+
+{# Map container #}
+<div id="mapid" style="height: 500px; margin-bottom: 15px;"></div>
+
+{# Display for selected coordinates #}
+<div class="mb-3">
+    <strong>Selected Coordinates:</strong>
+    <span id="coords-display">None - Click on the map</span>
+</div>
+
+{# Button to send location #}
+<div class="mb-3">
+     <button id="send-button" class="btn btn-primary" disabled>Send Location to Backend</button>
+</div>
+
+{# Display for status messages #}
+<div class="mb-3">
+     <strong>Status:</strong>
+     <span id="status-display" class="text-muted">Waiting for selection...</span>
+</div>
+
+{# Inline JavaScript for this page #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Map Initialization ---
+        var initialCoords = [20.2961, 85.8245]; // Default: Bhubaneswar (Lat, Lng)
+        var initialZoom = 13;
+
+        // Try to get user's current location for a better initial view
+        if (navigator.geolocation) {
+             navigator.geolocation.getCurrentPosition(function(position) {
+                 mymap.setView([position.coords.latitude, position.coords.longitude], initialZoom);
+             }, function() {
+                 console.warn("Could not get user location for initial map view.");
+             });
+        }
+
+        var mymap = L.map('mapid').setView(initialCoords, initialZoom);
+
+        // --- Tile Layer (Map Background) ---
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mymap);
+
+        // --- Variables ---
+        var marker; // Holds the map marker
+        var selectedCoords = null; // Holds the {lat, lng} object
+        var coordsDisplay = document.getElementById('coords-display');
+        var statusDisplay = document.getElementById('status-display');
+        var sendButton = document.getElementById('send-button');
+
+        // --- Map Click Event ---
+        mymap.on('click', function(e) {
+            selectedCoords = e.latlng; // Get coords from click event
+            // Display formatted coordinates
+            coordsDisplay.innerHTML = `Lat: <code class='user-select-all'>${selectedCoords.lat.toFixed(6)}</code>, Lon: <code class='user-select-all'>${selectedCoords.lng.toFixed(6)}</code>`;
+
+            // Remove previous marker if it exists
+            if (marker) {
+                mymap.removeLayer(marker);
+            }
+            // Add a new marker at the clicked location
+            marker = L.marker([selectedCoords.lat, selectedCoords.lng]).addTo(mymap)
+                .bindPopup(`Selected Location<br>Lat: ${selectedCoords.lat.toFixed(4)}<br>Lon: ${selectedCoords.lng.toFixed(4)}`)
+                .openPopup();
+
+            sendButton.disabled = false; // Enable the send button
+            statusDisplay.innerText = 'Location selected. Ready to send.';
+            statusDisplay.className = 'text-info';
+        });
+
+        // --- Send Button Click Event ---
+        sendButton.addEventListener('click', function() {
+            if (!selectedCoords) {
+                alert("Error: No coordinates selected. Click on the map first.");
+                return;
+            }
+
+            const latitude = selectedCoords.lat;
+            const longitude = selectedCoords.lng;
+
+            statusDisplay.innerText = 'Sending location...';
+            statusDisplay.className = 'text-info';
+            sendButton.disabled = true; // Disable button while sending
+            console.log(`Sending simulated location: Lat=${latitude}, Lon=${longitude}`);
+
+            // Use fetch to send data to the same backend endpoint
+            fetch('/api/update_location', { // Target the existing API endpoint
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Session cookie should be sent automatically by browser
+                },
+                body: JSON.stringify({ latitude: latitude, longitude: longitude }),
+            })
+            .then(response => {
+                 // Check for HTTP errors first
+                 if (!response.ok) {
+                     // Try to get error message from server response body
+                     return response.json().then(errData => {
+                          throw new Error(errData.message || `Server error! Status: ${response.status}`);
+                     }).catch(() => {
+                          // If response body isn't JSON or no message, throw generic HTTP error
+                          throw new Error(`Server error! Status: ${response.status}`);
+                     });
+                 }
+                 return response.json(); // Parse JSON if response is OK
+            })
+            .then(data => {
+                // Handle successful response from server
+                if (data.status === 'success') {
+                    console.log('Server received simulated location successfully:', data.message);
+                    // Use innerHTML to keep the code tags for coordinates
+                    statusDisplay.innerHTML = `Location (Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}) sent successfully! [${new Date().toLocaleTimeString()}]`;
+                    statusDisplay.className = 'text-success';
+                } else {
+                    // Handle cases where server returns success status but with an error message
+                    console.error('Server reported an issue:', data.message);
+                    statusDisplay.innerText = `Server issue: ${data.message}`;
+                    statusDisplay.className = 'text-warning';
+                }
+            })
+            .catch((error) => {
+                // Handle fetch errors (network issue, server unreachable) or errors thrown above
+                console.error('Error sending simulated location:', error);
+                 statusDisplay.innerText = `Failed to send location: ${error.message}`;
+                 statusDisplay.className = 'text-danger';
+            })
+            .finally(() => {
+                 // Re-enable button slightly after operation finishes, unless coords are cleared
+                 if(selectedCoords) {
+                    setTimeout(() => { sendButton.disabled = false; }, 500);
+                 }
+            }); // End fetch
+        }); // End button event listener
+
+    }); // End DOMContentLoaded
+</script>
+
+{% endblock %} {# End block content #}

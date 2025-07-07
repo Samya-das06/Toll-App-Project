@@ -1,0 +1,128 @@
+{# templates/dashboard.html #}
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Dashboard</h1>
+<p>Welcome, {{ current_user.username }}!</p>
+
+{# Display Total Due #}
+<div class="alert alert-warning" role="alert">
+  <strong>Total Amount Due: INR {{ "%.2f"|format(total_due if total_due else 0) }}</strong>
+</div>
+
+{# Link to Map Testing Page #}
+<div class="mb-4">
+     <a href="{{ url_for('map_test') }}" target="_blank" class="btn btn-info">Go to Map Testing Interface</a>
+     {# Maybe link to payment page if needed #}
+     {# <a href="{{ url_for('payment') }}" class="btn btn-secondary ms-2">View Payment Page</a> #}
+</div>
+
+{# --- REMOVE Live Location Display Section --- #}
+{# The card containing location-status, location-coords etc. is removed #}
+
+
+{# --- Display Unpaid Tolls --- #}
+<h2>Pending Bills</h2>
+{% if unpaid_tolls %}
+    <div class="row row-cols-1 row-cols-md-2 g-4"> {# Display as cards in 2 columns on medium screens+ #}
+        {% for toll in unpaid_tolls %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header">Toll Record ID: {{ toll.id }}</div>
+                {# Add a div for the map with a unique ID #}
+                <div id="map-{{ toll.id }}" class="toll-map"></div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Entry:</strong> {{ toll.entry_address }}<br>
+                            <small class="text-muted">{{ toll.entry_timestamp.strftime('%Y-%m-%d %H:%M') if toll.entry_timestamp else 'N/A'}}</small>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Exit:</strong> {{ toll.exit_address }}<br>
+                            <small class="text-muted">{{ toll.exit_timestamp.strftime('%Y-%m-%d %H:%M') if toll.exit_timestamp else 'N/A' }}</small>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Distance:</strong> {{ "%.2f"|format(toll.distance_km if toll.distance_km else 0) }} km
+                        </li>
+                         <li class="list-group-item">
+                            <strong>Amount Due:</strong> INR {{ "%.2f"|format(toll.amount_due if toll.amount_due else 0) }}
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                     <form action="{{ url_for('pay_bill', toll_id=toll.id) }}" method="POST" style="display:inline;">
+                        {# TODO: Replace with actual payment gateway integration later #}
+                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Simulate payment for INR {{ "%.2f"|format(toll.amount_due) }} for Record ID {{ toll.id }}?')">
+                            Pay Bill {{ toll.id }}
+                        </button>
+                    </form>
+                     <a href="{{ url_for('query_page', toll_id=toll.id) }}" class="btn btn-warning btn-sm ms-2">Query Bill</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# --- JavaScript for Initializing Maps --- #}
+    {# This needs to run AFTER the map divs are created #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% for toll in unpaid_tolls %}
+                {# Check if coordinates exist before creating map #}
+                {% if toll.entry_lat and toll.entry_lon and toll.exit_lat and toll.exit_lon %}
+                    try {
+                        // Create map instance for this toll record
+                        var map{{ toll.id }} = L.map('map-{{ toll.id }}', {
+                             scrollWheelZoom: false // Disable zoom on scroll for small maps
+                        });
+
+                        // Add Tile Layer
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            maxZoom: 18, // Limit zoom for small maps
+                            attribution: '&copy; OSM' // Shorter attribution
+                        }).addTo(map{{ toll.id }});
+
+                        // Define markers
+                        var entryCoords = [{{ toll.entry_lat }}, {{ toll.entry_lon }}];
+                        var exitCoords = [{{ toll.exit_lat }}, {{ toll.exit_lon }}];
+
+                        var entryMarker = L.marker(entryCoords).addTo(map{{ toll.id }})
+                            .bindPopup('<b>Entry:</b><br>{{ toll.entry_address | replace('"', '\\"') | replace("'", "\\'") | safe }}');
+                        var exitMarker = L.marker(exitCoords).addTo(map{{ toll.id }})
+                            .bindPopup('<b>Exit:</b><br>{{ toll.exit_address | replace('"', '\\"') | replace("'", "\\'") | safe }}');
+
+                        // Create bounds from markers and fit map
+                        var bounds = L.latLngBounds([entryCoords, exitCoords]);
+                        map{{ toll.id }}.fitBounds(bounds.pad(0.1)); // Fit bounds with padding
+
+                        // Optional: Add a line between points
+                         // var latlngs = [entryCoords, exitCoords];
+                         // var polyline = L.polyline(latlngs, {color: 'blue'}).addTo(map{{ toll.id }});
+
+                    } catch (e) {
+                        console.error("Error creating map for toll ID {{ toll.id }}:", e);
+                        // Optionally display an error message in the map div
+                        document.getElementById('map-{{ toll.id }}').innerHTML = '<p class="text-danger text-center p-2">Error loading map.</p>';
+                    }
+                {% else %}
+                    // Display message if coordinates are missing
+                     document.getElementById('map-{{ toll.id }}').innerHTML = '<p class="text-muted text-center p-2">Map unavailable (missing coordinates).</p>';
+                {% endif %}
+            {% endfor %}
+        });
+    </script>
+    {# --- End JavaScript --- #}
+
+{% else %}
+    <div class="alert alert-success" role="alert">
+        You have no pending bills.
+    </div>
+{% endif %}
+
+{# We removed the specific scripts block from base.html, #}
+{# so no need for {% block scripts %} here unless adding other scripts #}
+
+{% endblock %} {# End block content #}
+
+{# --- REMOVE Live Location <script> Include --- #}
+{# Do NOT include location.js if we don't want live tracking/display #}
