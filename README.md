@@ -19,28 +19,13 @@ The **Automated Toll Road System** is a smart solution designed to automate toll
 
 ## Technologies Used
 
-- Python 3.x
+- Python
 - GPS Tracking APIs
-- Mapping APIs (Google Maps API, OpenStreetMap, etc.)
-- Payment Gateway APIs (Stripe, PayPal, etc.)
-- SMTP/email or SMS APIs for notifications
+- Mapping APIs
+- Payment Gateway APIs
 
 ---
 
-## Installation
-
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/your-username/automated-toll-system.git
-    ```
-2. Navigate into the project directory:
-    ```bash
-    cd automated-toll-system
-    ```
-3. Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
 4. Configure API keys and payment credentials in the `.env` file.
 
 ---
