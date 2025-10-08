@@ -52,21 +52,4 @@ The **Automated Toll Road System** is a smart solution designed to automate toll
 3. Receive toll calculation and payment requests via email/SMS.
 4. Complete payment through the integrated payment gateway.
 
----
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request to help improve the project.
-
----
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Contact
-
-For questions or support, please contact [your-email@example.com].
 
