@@ -26,15 +26,9 @@ The **Automated Toll Road System** is a smart solution designed to automate toll
 
 ---
 
-4. Configure API keys and payment credentials in the `.env` file.
-
----
-
 ## Usage
 
 1. Register your vehicle with the system by providing GPS device details.
 2. Drive through toll zones; the system will automatically detect entry and exit points.
 3. Receive toll calculation and payment requests via email/SMS.
 4. Complete payment through the integrated payment gateway.
-
-
